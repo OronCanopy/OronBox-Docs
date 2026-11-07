@@ -11,7 +11,7 @@ import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/p
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const REPO = 'zxor-org/OronBox';
+const REPO = 'OronCanopy/OronBox';
 const API = `https://api.github.com/repos/${REPO}/releases`;
 const OUT_DIR = fileURLToPath(new URL('../public/web/', import.meta.url));
 const TMP_ZIP = fileURLToPath(new URL('../.tmp-web.zip', import.meta.url));

@@ -1,7 +1,7 @@
 export const appName = 'OronBox';
 
 export const gitConfig = {
-  user: 'zxor-org',
+  user: 'OronCanopy',
   repo: 'OronBox-Docs',
   branch: 'main',
 };

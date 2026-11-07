@@ -6,6 +6,7 @@ import {
   DocsTitle,
 } from 'fumadocs-ui/layouts/docs/page';
 import { notFound } from 'next/navigation';
+import { M3EFooter } from '@/components/m3e-footer';
 import { getMDXComponents } from '@/components/mdx';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
@@ -23,9 +24,39 @@ export default async function Page({
   const MDX = page.data.body;
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
-      <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription>{page.data.description}</DocsDescription>
+    <DocsPage
+      toc={page.data.toc}
+      full={page.data.full}
+      tableOfContent={{ style: 'clerk' }}
+      footer={{ children: <M3EFooter lang={lang} /> }}
+    >
+      <div className="relative isolate mb-3 overflow-hidden rounded-[26px] bg-[var(--md-sys-color-surface-container-low)] px-6 py-5 sm:px-7 sm:py-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden select-none"
+        >
+          <svg
+            viewBox="0 0 100 100"
+            className="m3e-ambient-drift-3 absolute -top-12 -right-10 size-36 opacity-50"
+          >
+            <rect
+              x="8"
+              y="16"
+              width="84"
+              height="68"
+              rx="34"
+              transform="rotate(-16 50 50)"
+              fill="var(--md-custom-color-amber-container)"
+            />
+          </svg>
+        </div>
+        <DocsTitle className="font-brand relative z-10 text-2xl sm:text-3xl">
+          {page.data.title}
+        </DocsTitle>
+        <DocsDescription className="relative z-10 mt-1.5 mb-0 text-sm sm:text-base">
+          {page.data.description}
+        </DocsDescription>
+      </div>
       <DocsBody>
         <MDX
           components={getMDXComponents({

@@ -1,6 +1,6 @@
 import { creatorSource } from '@/lib/source';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
-import { baseOptions } from '@/lib/layout.shared';
+import { docsOptions } from '@/lib/layout.shared';
 
 export default async function Layout({
   children,
@@ -12,7 +12,7 @@ export default async function Layout({
   const { lang } = await params;
 
   return (
-    <DocsLayout tree={creatorSource.getPageTree(lang)} {...baseOptions(lang)}>
+    <DocsLayout tree={creatorSource.getPageTree(lang)} {...docsOptions(lang)}>
       {children}
     </DocsLayout>
   );

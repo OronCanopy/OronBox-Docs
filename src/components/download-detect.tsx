@@ -201,11 +201,10 @@ export function DownloadButton({
   };
 
   const btnClass = cn(
-    'inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold no-underline',
-    'transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+    'm3e-morph-pill inline-flex min-h-13 items-center gap-2.5 px-7 text-sm font-semibold no-underline cursor-pointer select-none',
     variant === 'filled'
       ? 'bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] hover:brightness-105'
-      : 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] hover:brightness-105',
+      : 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] hover:bg-[var(--md-sys-color-primary)] hover:text-[var(--md-sys-color-on-primary)]',
     className,
   );
 
@@ -220,12 +219,12 @@ export function DownloadButton({
           aria-expanded={open}
           className={btnClass}
         >
-          <Download className="size-5" />
+          <Download className="size-5 shrink-0" />
           <span>{label}</span>
         </button>
       ) : (
         <a href={rawHref} onClick={intercept} className={btnClass}>
-          <Download className="size-5" />
+          <Download className="size-5 shrink-0" />
           <span>{label}</span>
         </a>
       )}
@@ -237,7 +236,7 @@ export function DownloadButton({
             ref={menuRef}
             role="menu"
             style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-50 flex max-h-[60vh] min-w-52 -translate-x-1/2 flex-col overflow-y-auto rounded-2xl bg-[var(--md-sys-color-surface-container-high)] p-2 shadow-xl"
+            className="fixed z-50 flex max-h-[60vh] min-w-56 -translate-x-1/2 flex-col gap-1 overflow-y-auto rounded-[24px] bg-[var(--md-sys-color-surface-container-high)] p-2 shadow-2xl ring-1 ring-[var(--md-sys-color-outline-variant)]/40"
             onClick={() => setOpen(false)}
           >
             {isAndroidMenu
@@ -256,9 +255,9 @@ export function DownloadButton({
                       );
                     }}
                     role="menuitem"
-                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[var(--color-fd-foreground)] no-underline hover:bg-[var(--md-sys-color-surface-container-highest)]"
+                    className="flex items-center gap-2.5 rounded-[10px] first:rounded-t-[16px] last:rounded-b-[16px] bg-[var(--md-sys-color-surface-container)] px-4 py-2.5 text-sm font-medium text-[var(--color-fd-foreground)] no-underline transition-[border-radius,background-color,color] duration-220 ease-[var(--md-ease-emphasized)] hover:rounded-[16px] hover:bg-[var(--md-sys-color-primary-container)] hover:text-[var(--md-sys-color-on-primary-container)]"
                   >
-                    <Download className="size-4 shrink-0 text-fd-muted-foreground" />
+                    <Download className="size-4 shrink-0 text-[var(--md-sys-color-primary)]" />
                     <span>{option.label}</span>
                   </a>
                 ))
@@ -271,9 +270,9 @@ export function DownloadButton({
                       goto(option.url, githubToastMessage, downloadToastMessage);
                     }}
                     role="menuitem"
-                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[var(--color-fd-foreground)] no-underline hover:bg-[var(--md-sys-color-surface-container-highest)]"
+                    className="flex items-center gap-2.5 rounded-[10px] first:rounded-t-[16px] last:rounded-b-[16px] bg-[var(--md-sys-color-surface-container)] px-4 py-2.5 text-sm font-medium text-[var(--color-fd-foreground)] no-underline transition-[border-radius,background-color,color] duration-220 ease-[var(--md-ease-emphasized)] hover:rounded-[16px] hover:bg-[var(--md-sys-color-primary-container)] hover:text-[var(--md-sys-color-on-primary-container)]"
                   >
-                    <Download className="size-4 shrink-0 text-fd-muted-foreground" />
+                    <Download className="size-4 shrink-0 text-[var(--md-sys-color-primary)]" />
                     <span>
                       {option.format}
                       {option.archLabel ? ` · ${option.archLabel}` : ''}

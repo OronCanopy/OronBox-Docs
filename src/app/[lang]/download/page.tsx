@@ -1,12 +1,10 @@
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import {
   FileArchive,
-  FileCheck2,
   Globe,
   History,
 } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
-import { withLocale } from '@/lib/i18n';
 import { baseOptions } from '@/lib/layout.shared';
 import {
   getRelease,
@@ -16,10 +14,13 @@ import {
   type Os,
   type PackageKind,
 } from '@/lib/releases';
+import { ChecksumsDialog } from '@/components/checksums-dialog';
 import { DownloadButton } from '@/components/download-detect';
 import { DownloadOptionButton } from '@/components/download-option-button';
+import { M3EFooter } from '@/components/m3e-footer';
+import { M3EHeroBackdrop } from '@/components/m3e-hero-backdrop';
+import { M3EShapeBadge, type M3EShapeVariant } from '@/components/m3e-shapes';
 import { ProxiedAnchor } from '@/components/proxied-anchor';
-import { Reveal } from '@/components/reveal';
 import {
   AndroidIcon,
   AppleIcon,
@@ -101,6 +102,37 @@ const platformIcons: Record<Os, IconComponent> = {
   web: Globe as unknown as IconComponent,
 };
 
+const platformShapeStyles: Record<
+  Os,
+  { shape: M3EShapeVariant; bg: string; fg: string }
+> = {
+  android: {
+    shape: 'scallop',
+    bg: 'var(--md-custom-color-teal-container)',
+    fg: 'var(--md-custom-color-on-teal-container)',
+  },
+  macos: {
+    shape: 'squircle',
+    bg: 'var(--md-sys-color-primary-container)',
+    fg: 'var(--md-sys-color-on-primary-container)',
+  },
+  linux: {
+    shape: 'sunny',
+    bg: 'var(--md-custom-color-amber-container)',
+    fg: 'var(--md-custom-color-on-amber-container)',
+  },
+  windows: {
+    shape: 'clover',
+    bg: 'var(--md-custom-color-blue-container)',
+    fg: 'var(--md-custom-color-on-blue-container)',
+  },
+  web: {
+    shape: 'hexagon',
+    bg: 'var(--md-sys-color-tertiary-container)',
+    fg: 'var(--md-sys-color-on-tertiary-container)',
+  },
+};
+
 const linuxFormatIcons: Partial<Record<PackageKind, IconComponent>> = {
   appimage: AppImageIcon,
   flatpak: FlatpakIcon,
@@ -120,8 +152,8 @@ const linuxFormatNames: Partial<Record<PackageKind, string>> = {
 };
 
 const linuxKindOrder: PackageKind[] = [
-  'appimage',
   'flatpak',
+  'appimage',
   'deb',
   'rpm',
   'arch',
@@ -138,7 +170,7 @@ const archOrder: Record<Arch, number> = {
   any: 4,
 };
 
-/** Android listing order: arm64-v8a → armeabi-v7a → x86_64 → aab */
+/** Android listing order: arm64-v8a → armeabi-v7a → x86_64 */
 const androidArchOrder: Record<Arch, number> = {
   arm64: 0,
   armv7: 1,
@@ -147,12 +179,11 @@ const androidArchOrder: Record<Arch, number> = {
   universal: 4,
 };
 
-/** recommended package kind per platform, for the 推荐 badge.
-    linux has no single recommendation — 6 formats, none highlighted. */
+/** recommended package kind per platform, for the 推荐 badge. */
 const recommendedKind: Record<Os, PackageKind | null> = {
   windows: 'exe',
   macos: 'dmg',
-  linux: null,
+  linux: 'flatpak',
   android: 'apk',
   web: 'web',
 };
@@ -204,99 +235,98 @@ export default async function DownloadPage({
 
   return (
     <HomeLayout {...baseOptions(lang)}>
-      {/* Hero */}
-      <section className="relative isolate flex flex-col items-center overflow-clip px-6 pb-16 pt-24 text-center">
-        <div className="hero-atmosphere" aria-hidden />
-        <div className="hero-edge-fade" aria-hidden />
-        <div className="z-10 flex flex-col items-center gap-4">
-          <h1
-            className="hero-rise font-brand text-[clamp(36px,6vw,64px)] font-semibold leading-[1.05] tracking-[-0.02em] text-[var(--color-fd-foreground)]"
-            style={{ '--rise-delay': '60ms' } as React.CSSProperties}
-          >
-            {pick(copy.hero.title)}
-          </h1>
-          <p
-            className="hero-rise text-[1.0625rem] text-fd-muted-foreground sm:text-lg"
-            style={{ '--rise-delay': '140ms' } as React.CSSProperties}
-          >
-            {pick(copy.hero.subtitle)}
-          </p>
-          <div
-            className="hero-rise flex items-center gap-2"
-            style={{ '--rise-delay': '220ms' } as React.CSSProperties}
-          >
-            <span className="rounded-full bg-[var(--md-sys-color-secondary-container)] px-3 py-1 text-xs font-semibold text-[var(--md-sys-color-on-secondary-container)]">
-              {release.tag}
-            </span>
-            {release.prerelease && (
-              <span className="rounded-full bg-[var(--md-custom-color-amber-container)] px-3 py-1 text-xs font-semibold text-[var(--md-custom-color-on-amber-container)]">
-                {pick(copy.hero.prerelease)}
-              </span>
-            )}
-          </div>
-          <div
-            className="hero-rise mt-4 flex flex-wrap items-center justify-center gap-3"
-            style={{ '--rise-delay': '320ms' } as React.CSSProperties}
-          >
-            <DownloadButton
-              picks={picks}
-              texts={downloadTexts}
-              downloadPageHref="#all"
-              variant="filled"
-              className="min-h-14 px-8 text-base"
-              linuxOptions={linuxOptions}
-              githubToastMessage={pick(copy.hero.githubMirrorTesting)}
-              downloadToastMessage={pick(copy.hero.downloadStarting)}
-            />
-          </div>
-        </div>
-      </section>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pt-6 pb-14 sm:px-6">
+        {/* Hero */}
+        <section className="relative isolate overflow-hidden rounded-[32px] bg-[var(--md-sys-color-surface-container-low)] px-6 py-10 text-center sm:px-10 sm:py-12">
+          <M3EHeroBackdrop variant="download" />
 
-      {/* All platforms */}
-      <section
-        id="all"
-        className="mx-auto flex w-full max-w-5xl scroll-mt-24 flex-col gap-6 px-6 pb-20"
-      >
-        {platformOrder.map((os, gi) => {
-          const PlatformIcon = platformIcons[os];
-          const platform = copy.platforms[os];
-          return (
-            <Reveal key={os} delay={gi * 80}>
+          <div className="relative z-10 flex flex-col items-center gap-2.5">
+            <div className="inline-flex items-center gap-1 rounded-[18px] bg-[var(--md-sys-color-surface-container)] p-1">
+              <span className="rounded-[14px] bg-[var(--md-sys-color-primary-container)] px-3 py-0.5 text-xs font-bold text-[var(--md-sys-color-on-primary-container)]">
+                {release.tag}
+              </span>
+              {release.prerelease && (
+                <span className="rounded-[14px] bg-[var(--md-custom-color-amber-container)] px-3 py-0.5 text-xs font-bold text-[var(--md-custom-color-on-amber-container)]">
+                  {pick(copy.hero.prerelease)}
+                </span>
+              )}
+            </div>
+
+            <h1 className="font-brand text-[clamp(34px,5.5vw,56px)] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--color-fd-foreground)]">
+              {pick(copy.hero.title)}
+            </h1>
+
+            <p className="text-sm text-fd-muted-foreground sm:text-base">
+              {pick(copy.hero.subtitle)}
+            </p>
+
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2.5">
+              <DownloadButton
+                picks={picks}
+                texts={downloadTexts}
+                downloadPageHref="#all"
+                variant="filled"
+                className="min-h-12 px-7 text-sm sm:text-base"
+                linuxOptions={linuxOptions}
+                githubToastMessage={pick(copy.hero.githubMirrorTesting)}
+                downloadToastMessage={pick(copy.hero.downloadStarting)}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Direct M3E Segmented Platform Stack (no outer box wrapper) */}
+        <section
+          id="all"
+          className="flex scroll-mt-20 flex-col gap-1.5 overflow-hidden rounded-[28px]"
+        >
+          {platformOrder.map((os) => {
+            const PlatformIcon = platformIcons[os];
+            const platform = copy.platforms[os];
+            const badgeStyle = platformShapeStyles[os];
+            return (
               <div
-                className="rounded-[28px] bg-[var(--md-sys-color-surface-container-low)] p-6 sm:p-8"
+                key={os}
+                className="group m3e-segmented-card bg-[var(--md-sys-color-surface-container-low)] p-5 sm:p-6"
               >
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)]">
-                    <PlatformIcon className="size-6" />
-                  </span>
+                <div className="mb-4 flex items-center gap-3">
+                  <M3EShapeBadge
+                    variant={badgeStyle.shape}
+                    bg={badgeStyle.bg}
+                    fg={badgeStyle.fg}
+                    size="sm"
+                  >
+                    <PlatformIcon className="size-5" />
+                  </M3EShapeBadge>
                   <div>
-                    <h2 className="text-xl font-semibold text-[var(--color-fd-foreground)]">
+                    <h2 className="font-brand text-lg font-semibold text-[var(--color-fd-foreground)] sm:text-xl">
                       {platform.name}
                     </h2>
-                    <p className="text-sm text-fd-muted-foreground">
+                    <p className="text-xs text-fd-muted-foreground sm:text-sm">
                       {pick(platform.note)}
                     </p>
                   </div>
                 </div>
 
                 {os === 'linux' ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1 overflow-hidden rounded-[20px]">
                     {linuxByKind.map(({ kind, options }) => {
-                      const FormatIcon = linuxFormatIcons[kind] ?? FileArchive;
+                      const FormatIcon =
+                        linuxFormatIcons[kind] ?? FileArchive;
                       return (
                         <div
                           key={kind}
-                          className="flex flex-col gap-3 rounded-2xl bg-[var(--md-sys-color-surface-container)] p-4 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-2.5 rounded-[8px] bg-[var(--md-sys-color-surface-container)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-[var(--md-sys-color-surface-container-high)] text-[var(--color-fd-foreground)]">
-                              <FormatIcon className="size-5" />
+                          <div className="flex items-center gap-2.5">
+                            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--md-sys-color-surface-container-high)] text-[var(--color-fd-foreground)]">
+                              <FormatIcon className="size-4" />
                             </span>
-                            <span className="font-medium text-[var(--color-fd-foreground)]">
+                            <span className="font-brand text-sm font-semibold text-[var(--color-fd-foreground)] sm:text-base">
                               {linuxFormatNames[kind]}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
                             {options.map((option) => (
                               <DownloadOptionButton
                                 key={option.name}
@@ -307,8 +337,12 @@ export default async function DownloadPage({
                                   option.arch === 'x64'
                                 }
                                 recommendedLabel={pick(copy.recommended)}
-                                githubToastMessage={pick(copy.hero.githubMirrorTesting)}
-                                downloadToastMessage={pick(copy.hero.downloadStarting)}
+                                githubToastMessage={pick(
+                                  copy.hero.githubMirrorTesting,
+                                )}
+                                downloadToastMessage={pick(
+                                  copy.hero.downloadStarting,
+                                )}
                               />
                             ))}
                           </div>
@@ -331,45 +365,48 @@ export default async function DownloadPage({
                               option.arch === 'any')
                         }
                         recommendedLabel={pick(copy.recommended)}
-                        githubToastMessage={pick(copy.hero.githubMirrorTesting)}
-                        downloadToastMessage={pick(copy.hero.downloadStarting)}
+                        githubToastMessage={pick(
+                          copy.hero.githubMirrorTesting,
+                        )}
+                        downloadToastMessage={pick(
+                          copy.hero.downloadStarting,
+                        )}
                       />
                     ))}
                   </div>
                 )}
               </div>
-            </Reveal>
-          );
-        })}
+            );
+          })}
+        </section>
 
-        {/* integrity & history */}
-        <Reveal delay={120}>
-          <div className="flex flex-col items-center gap-3 rounded-[28px] bg-[var(--md-sys-color-surface-container)] p-6 text-center">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {release.checksumsUrl && (
-                <ProxiedAnchor
-                  href={release.checksumsUrl}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[var(--md-sys-color-surface-container-high)] px-4 text-sm font-medium text-[var(--color-fd-foreground)] no-underline transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:bg-[var(--md-sys-color-secondary-container)] hover:text-[var(--md-sys-color-on-secondary-container)]"
-                  githubToastMessage={pick(copy.hero.githubMirrorTesting)}
-                  downloadToastMessage={pick(copy.hero.downloadStarting)}
-                >
-                  <FileCheck2 className="size-4" />
-                  {pick(copy.footer.checksums)}
-                </ProxiedAnchor>
-              )}
-              <ProxiedAnchor
-                href={release.pageUrl.replace(/\/tag\/.*$/, '')}
-                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[var(--md-sys-color-surface-container-high)] px-4 text-sm font-medium text-[var(--color-fd-foreground)] no-underline transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:bg-[var(--md-sys-color-secondary-container)] hover:text-[var(--md-sys-color-on-secondary-container)]"
+        {/* Integrity & history — M3E Connected Button Group */}
+        <div className="flex justify-center">
+          <div className="m3e-connected-group flex flex-wrap items-center justify-center gap-1">
+            {release.checksumsUrl && (
+              <ChecksumsDialog
+                checksumsUrl={release.checksumsUrl}
+                tag={release.tag}
+                locale={locale}
+                label={pick(copy.footer.checksums)}
                 githubToastMessage={pick(copy.hero.githubMirrorTesting)}
                 downloadToastMessage={pick(copy.hero.downloadStarting)}
-              >
-                <History className="size-4" />
-                {pick(copy.footer.allReleases)}
-              </ProxiedAnchor>
-            </div>
+              />
+            )}
+            <ProxiedAnchor
+              href={release.pageUrl.replace(/\/tag\/.*$/, '')}
+              className="m3e-connected-item inline-flex min-h-10 items-center gap-2 bg-[var(--md-sys-color-surface-container-low)] px-4.5 text-sm font-semibold text-[var(--color-fd-foreground)] no-underline hover:bg-[var(--md-sys-color-primary-container)] hover:text-[var(--md-sys-color-on-primary-container)]"
+              githubToastMessage={pick(copy.hero.githubMirrorTesting)}
+              downloadToastMessage={pick(copy.hero.downloadStarting)}
+            >
+              <History className="size-4" />
+              {pick(copy.footer.allReleases)}
+            </ProxiedAnchor>
           </div>
-        </Reveal>
-      </section>
+        </div>
+
+        <M3EFooter lang={lang} />
+      </div>
     </HomeLayout>
   );
 }

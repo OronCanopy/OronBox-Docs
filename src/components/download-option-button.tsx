@@ -45,15 +45,13 @@ export function DownloadOptionButton({
         goto(option.url, githubToastMessage, downloadToastMessage);
       }}
       className={cn(
-        'inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-sm font-medium no-underline',
-        'transition-[background-color,color,border-radius,transform,box-shadow] duration-300',
-        'ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+        'm3e-morph-pill inline-flex min-h-10 items-center gap-2 px-4 text-sm font-medium no-underline',
         recommended
-          ? 'bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)]'
-          : 'bg-[var(--md-sys-color-surface-container-high)] text-[var(--color-fd-foreground)] hover:bg-[var(--md-sys-color-primary-container)] hover:text-[var(--md-sys-color-on-primary-container)]',
+          ? 'bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] font-semibold'
+          : 'bg-[var(--md-sys-color-secondary-container)] text-[var(--md-sys-color-on-secondary-container)] hover:bg-[var(--md-sys-color-primary-container)] hover:text-[var(--md-sys-color-on-primary-container)]',
       )}
     >
-      <Download className="size-4" />
+      <Download className="size-4 shrink-0" />
       <span>
         {option.format}
         {option.os === 'android' && androidArchLabels[option.arch]
@@ -63,7 +61,7 @@ export function DownloadOptionButton({
             : ''}
       </span>
       {recommended && (
-        <span className="rounded-full bg-[var(--md-sys-color-on-primary)]/20 px-2 py-0.5 text-xs font-semibold">
+        <span className="rounded-[10px] bg-[var(--md-sys-color-primary-container)] px-2 py-0.5 text-xs font-bold text-[var(--md-sys-color-on-primary-container)]">
           {recommendedLabel}
         </span>
       )}

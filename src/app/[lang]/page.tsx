@@ -4,15 +4,10 @@ import Image from 'next/image';
 import {
   ArrowRight,
   Bluetooth,
-  BookOpen,
   Boxes,
   Code2,
-  FileText,
-  Globe,
-  Info,
   MessageCircle,
   Package,
-  Palette,
   Puzzle,
   Server,
   ShieldCheck,
@@ -22,16 +17,19 @@ import {
   Users,
 } from 'lucide-react';
 import { withLocale } from '@/lib/i18n';
-import { baseOptions } from '@/lib/layout.shared';
+import { baseOptions, sectionVisuals } from '@/lib/layout.shared';
 import { sections } from '@/lib/shared';
 import { getRelease, linuxDownloadOptions, recommendedFor, type Os } from '@/lib/releases';
 import {
   DownloadButton,
   type AndroidDownloadOption,
 } from '@/components/download-detect';
+import { M3EFooter } from '@/components/m3e-footer';
+import { M3EHeroBackdrop } from '@/components/m3e-hero-backdrop';
+import { M3EShapeBadge, type M3EShapeVariant } from '@/components/m3e-shapes';
+import { WebLaunchButton } from '@/components/web-launch-button';
 import { cn } from '@/lib/cn';
-import type { ComponentType, CSSProperties } from 'react';
-import { Reveal } from '@/components/reveal';
+import type { ComponentType } from 'react';
 
 type Locale = 'zh' | 'en';
 
@@ -93,6 +91,10 @@ const copy = {
   },
   features: {
     title: { zh: '能力一览', en: 'Capabilities' },
+    description: {
+      zh: '直连设备、安装社区资源、创作发布与扩展插件的一站式体验',
+      en: 'Connect devices, install community resources, publish creations and extend with plugins',
+    },
     items: [
       {
         icon: Bluetooth,
@@ -152,24 +154,31 @@ const copy = {
     },
     items: ['Windows', 'macOS', 'Linux', 'Android', 'Web'],
   },
+  docs: {
+    title: { zh: '文档与指南', en: 'Documentation & guides' },
+    description: {
+      zh: '从日常安装连接、表盘快应用创作到插件开发与项目架构说明',
+      en: 'From daily device setup and watchface creation to plugin development and project architecture',
+    },
+  },
   community: {
     title: { zh: '社区与开源', en: 'Community & open source' },
     description: {
-      zh: 'OronBox 客户端与服务端代码遵循 AGPL v3.0 开源\n欢迎参与贡献与讨论',
-      en: 'The OronBox client and server are open source under AGPL v3.0\nContributions and discussions are welcome',
+      zh: 'OronBox 客户端与服务端代码遵循 AGPL v3.0 开源，欢迎参与贡献与讨论',
+      en: 'The OronBox client and server are open source under AGPL v3.0 — contributions and discussions are welcome',
     },
     links: [
       {
         icon: Code2,
         title: { zh: 'OronBox', en: 'OronBox' },
         description: { zh: '客户端源码', en: 'Client source code' },
-        href: 'https://github.com/zxor-org/OronBox',
+        href: 'https://github.com/OronCanopy/OronBox',
       },
       {
         icon: Server,
         title: { zh: 'OronBox-Server', en: 'OronBox-Server' },
         description: { zh: '服务端源码', en: 'Server source code' },
-        href: 'https://github.com/zxor-org/OronBox-Server',
+        href: 'https://github.com/OronCanopy/OronBox-Server',
       },
       {
         icon: Users,
@@ -181,7 +190,7 @@ const copy = {
         icon: MessageCircle,
         title: { zh: 'Discussions', en: 'Discussions' },
         description: { zh: '公开讨论区', en: 'Public discussions' },
-        href: 'https://github.com/zxor-org/OronBox/discussions',
+        href: 'https://github.com/OronCanopy/OronBox/discussions',
       },
     ],
   },
@@ -197,12 +206,14 @@ const accents = [
   ['var(--md-sys-color-secondary-container)', 'var(--md-sys-color-on-secondary-container)'],
 ] as const;
 
-const sectionIcons: Record<string, typeof BookOpen> = {
-  user: BookOpen,
-  creator: Palette,
-  plugins: Puzzle,
-  about: Info,
-};
+const shapeVariants: M3EShapeVariant[] = [
+  'scallop',
+  'clover',
+  'sunny',
+  'hexagon',
+  'pill',
+  'squircle',
+];
 
 function DockLink({
   href,
@@ -213,20 +224,19 @@ function DockLink({
   href: string;
   icon: ComponentType<{ className?: string }>;
   children: React.ReactNode;
-  variant?: 'filled' | 'outlined';
+  variant?: 'filled' | 'connected';
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        'inline-flex min-h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold no-underline',
-        'transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+        'inline-flex items-center justify-center gap-2 text-sm font-semibold no-underline select-none',
         variant === 'filled'
-          ? 'bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] hover:brightness-105'
-          : 'text-[var(--md-sys-color-primary)] ring-1 ring-inset ring-[var(--md-sys-color-outline-variant)] hover:bg-[var(--md-sys-color-surface-container-high)] hover:ring-[var(--md-sys-color-outline)]',
+          ? 'm3e-morph-pill min-h-12 bg-[var(--md-sys-color-primary)] px-6 text-[var(--md-sys-color-on-primary)] hover:brightness-105'
+          : 'm3e-connected-item min-h-11 bg-[var(--md-sys-color-secondary-container)] px-4.5 text-[var(--md-sys-color-on-secondary-container)] hover:bg-[var(--md-sys-color-primary)] hover:text-[var(--md-sys-color-on-primary)]',
       )}
     >
-      <Icon className="size-5" />
+      <Icon className="size-4 shrink-0" />
       <span>{children}</span>
     </Link>
   );
@@ -273,281 +283,300 @@ export default async function HomePage({
 
   return (
     <HomeLayout {...baseOptions(lang)}>
-      {/* Hero */}
-      <section className="relative isolate flex flex-col items-center justify-center overflow-clip px-6 pb-14 pt-28 text-center">
-        <div className="hero-atmosphere" aria-hidden />
-        <div className="hero-edge-fade" aria-hidden />
-        <div className="z-10 flex flex-col items-center gap-2">
-          <h1
-            className="hero-rise font-brand text-[clamp(40px,6.8vw,72px)] font-semibold leading-[1.05] tracking-[-0.02em] text-[var(--color-fd-foreground)]"
-            style={{ '--rise-delay': '60ms' } as CSSProperties}
-          >
-            OronBox
-          </h1>
-          <p
-            className="hero-rise max-w-full text-[1.0625rem] leading-[1.65] text-[var(--color-fd-foreground)] sm:text-[1.375rem]"
-            style={{ '--rise-delay': '140ms' } as CSSProperties}
-          >
-            {pick(copy.hero.subtitle)}
-          </p>
-          <p
-            className="hero-rise mt-1 max-w-2xl whitespace-pre-line text-[0.875rem] leading-[1.65] text-fd-muted-foreground sm:text-base"
-            style={{ '--rise-delay': '220ms' } as CSSProperties}
-          >
-            {pick(copy.hero.description)}
-          </p>
-          <p
-            className="hero-rise mt-1 text-[0.875rem] leading-[1.65] text-fd-muted-foreground sm:text-base"
-            style={{ '--rise-delay': '260ms' } as CSSProperties}
-          >
-            {pick(copy.hero.derivedFrom.prefix)}
-            <a
-              href={copy.hero.derivedFrom.links[0].href}
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-current underline-offset-2 transition-opacity hover:opacity-80"
-            >
-              {copy.hero.derivedFrom.links[0].text}
-            </a>
-            {' & '}
-            <a
-              href={copy.hero.derivedFrom.links[1].href}
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-current underline-offset-2 transition-opacity hover:opacity-80"
-            >
-              {copy.hero.derivedFrom.links[1].text}
-            </a>
-          </p>
-        </div>
-        <div
-          className="hero-rise z-10 mt-6 flex flex-col items-center gap-2 sm:gap-3"
-          style={{ '--rise-delay': '320ms' } as CSSProperties}
-        >
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <DockLink href={withLocale(lang, '/user')} icon={ArrowRight}>
-              {pick(copy.cta.primary)}
-            </DockLink>
-            <DownloadButton
-              picks={picks}
-              texts={downloadTexts}
-              downloadPageHref={withLocale(lang, '/download')}
-              variant="tonal"
-              linuxOptions={linuxOptions}
-              androidOptions={androidOptions}
-              githubToastMessage={pick(copy.cta.githubMirrorTesting)}
-              downloadToastMessage={pick(copy.cta.downloadStarting)}
-            />
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <DockLink href="/web" icon={Globe} variant="outlined">
-              {pick(copy.cta.webOnline)}
-            </DockLink>
-            <DockLink
-              href={withLocale(lang, '/download')}
-              icon={Package}
-              variant="outlined"
-            >
-              {pick(copy.cta.downloadFallback)}
-            </DockLink>
-            <DockLink
-              href="https://github.com/zxor-org/OronBox"
-              icon={Star}
-              variant="outlined"
-            >
-              {pick(copy.cta.github)}
-            </DockLink>
-          </div>
-        </div>
-      </section>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pt-6 pb-12 sm:px-6">
+        {/* Unified M3E Segmented Top Stage: Hero + Preview + Platform Strip */}
+        <div className="flex flex-col gap-1.5 overflow-hidden rounded-[32px]">
+          {/* Segment 1: Hero */}
+          <section className="relative isolate overflow-hidden rounded-t-[32px] rounded-b-[12px] bg-[var(--md-sys-color-surface-container-low)] px-6 py-10 text-center sm:px-10 sm:py-12">
+            <M3EHeroBackdrop variant="home" />
 
-      {/* Product preview */}
-      <section
-        id="preview"
-        className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 pb-20"
-      >
-        <Reveal>
-          <h2 className="mb-8 text-center text-[clamp(28px,4vw,44px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
-            {pick(copy.preview.title)}
-          </h2>
-        </Reveal>
-        <Reveal delay={120}>
-          {/* PC + phone side by side at equal height — widths follow the real
-              aspect ratios (2268×1434 vs 1440×3200) so both end up the same height */}
-          <div className="flex flex-row gap-4 md:gap-6">
-            <div className="min-w-0" style={{ flexGrow: 2268 / 1434, flexBasis: 0 }}>
-              <Image
-                src={`/screenshots/${locale}_purple_light.png`}
-                alt={pick(copy.preview.altMain)}
-                width={2268}
-                height={1434}
-                className="h-auto w-full rounded-[20px] ring-4 ring-[var(--md-sys-color-outline)] dark:hidden"
-                priority={false}
-              />
-              <Image
-                src={`/screenshots/${locale}_purple_dark.png`}
-                alt={pick(copy.preview.altMain)}
-                width={2268}
-                height={1434}
-                className="hidden h-auto w-full rounded-[20px] ring-4 ring-[var(--md-sys-color-outline)] dark:block"
-                priority={false}
-              />
-            </div>
-            <div className="min-w-0" style={{ flexGrow: 1440 / 3200, flexBasis: 0 }}>
-              <Image
-                src={`/screenshots/mobile_${locale}_purple_light.png`}
-                alt={pick(copy.preview.altPhone)}
-                width={1440}
-                height={3200}
-                className="h-auto w-full rounded-xl ring-4 ring-[var(--md-sys-color-outline)] dark:hidden"
-              />
-              <Image
-                src={`/screenshots/mobile_${locale}_purple_dark.png`}
-                alt={pick(copy.preview.altPhone)}
-                width={1440}
-                height={3200}
-                className="hidden h-auto w-full rounded-xl ring-4 ring-[var(--md-sys-color-outline)] dark:block"
-              />
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* Platforms */}
-      <section
-        id="platforms"
-        className="mx-auto w-full max-w-5xl scroll-mt-24 px-6 pb-16"
-      >
-        <Reveal>
-          <h2 className="mb-6 text-center text-[clamp(28px,4vw,44px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
-            {pick(copy.platforms.title)}
-          </h2>
-        </Reveal>
-        <Reveal delay={80}>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {copy.platforms.items.map((item) => (
-              <span
-                key={item}
-                className="rounded-full px-4 py-2 text-sm font-medium text-[var(--color-fd-foreground)] ring-1 ring-inset ring-[var(--md-sys-color-outline-variant)] transition-colors duration-200 hover:bg-[var(--md-sys-color-surface-container-high)]"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-          <p className="mt-4 text-center text-sm text-fd-muted-foreground">
-            {pick(copy.platforms.hint)}
-          </p>
-        </Reveal>
-      </section>
-
-      {/* Features (bento) */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-20">
-        <Reveal>
-          <h2 className="mb-8 text-center text-[clamp(28px,4vw,44px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
-            {pick(copy.features.title)}
-          </h2>
-        </Reveal>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {copy.features.items.map((feature, i) => {
-            const [chipBg, chipFg] = accents[i % accents.length];
-            return (
-              <Reveal key={feature.title.zh} delay={i * 80}>
-                <div
-                  className="h-full rounded-[28px] bg-[var(--md-sys-color-surface-container-low)] p-6 transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+            <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center gap-2.5">
+              <div className="inline-flex flex-wrap items-center justify-center gap-1.5 rounded-[20px] bg-[var(--md-sys-color-surface-container)] px-3.5 py-1 text-xs font-medium text-[var(--md-sys-color-on-surface-variant)]">
+                <span>{pick(copy.hero.derivedFrom.prefix)}</span>
+                <a
+                  href={copy.hero.derivedFrom.links[0].href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[12px] bg-[var(--md-sys-color-primary-container)] px-2 py-0.5 font-semibold text-[var(--md-sys-color-on-primary-container)] no-underline transition-colors hover:bg-[var(--md-sys-color-primary)] hover:text-[var(--md-sys-color-on-primary)]"
                 >
-                  <span
-                    className="mb-4 inline-flex size-12 items-center justify-center rounded-2xl"
-                    style={{ backgroundColor: chipBg, color: chipFg }}
+                  {copy.hero.derivedFrom.links[0].text}
+                </a>
+                <span>&amp;</span>
+                <a
+                  href={copy.hero.derivedFrom.links[1].href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[12px] bg-[var(--md-sys-color-secondary-container)] px-2 py-0.5 font-semibold text-[var(--md-sys-color-on-secondary-container)] no-underline transition-colors hover:bg-[var(--md-sys-color-primary)] hover:text-[var(--md-sys-color-on-primary)]"
+                >
+                  {copy.hero.derivedFrom.links[1].text}
+                </a>
+              </div>
+
+              <h1 className="font-brand text-[clamp(42px,6.8vw,72px)] font-semibold leading-[1.04] tracking-[-0.03em] text-[var(--color-fd-foreground)]">
+                OronBox
+              </h1>
+
+              <p className="text-[1.0625rem] font-medium leading-[1.5] text-[var(--color-fd-foreground)] sm:text-[1.25rem]">
+                {pick(copy.hero.subtitle)}
+              </p>
+
+              <p className="whitespace-pre-line text-sm leading-[1.65] text-fd-muted-foreground sm:text-[0.9375rem]">
+                {pick(copy.hero.description)}
+              </p>
+
+              <div className="mt-3 flex flex-col items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <DockLink href={withLocale(lang, '/user')} icon={ArrowRight}>
+                    {pick(copy.cta.primary)}
+                  </DockLink>
+                  <DownloadButton
+                    picks={picks}
+                    texts={downloadTexts}
+                    downloadPageHref={withLocale(lang, '/download')}
+                    variant="tonal"
+                    className="min-h-12 px-6"
+                    linuxOptions={linuxOptions}
+                    androidOptions={androidOptions}
+                    githubToastMessage={pick(copy.cta.githubMirrorTesting)}
+                    downloadToastMessage={pick(copy.cta.downloadStarting)}
+                  />
+                </div>
+
+                <div className="m3e-connected-group flex flex-wrap items-center justify-center gap-1">
+                  <WebLaunchButton
+                    href="/web"
+                    downloadHref={withLocale(lang, '/download')}
+                    locale={locale}
                   >
-                    <feature.icon className="size-6" />
-                  </span>
-                  <h3 className="mb-1 text-lg font-medium text-[var(--color-fd-foreground)]">
-                    {pick(feature.title)}
-                  </h3>
-                  <p className="whitespace-pre-line text-sm leading-[1.65] text-fd-muted-foreground">
+                    {pick(copy.cta.webOnline)}
+                  </WebLaunchButton>
+                  <DockLink
+                    href={withLocale(lang, '/download')}
+                    icon={Package}
+                    variant="connected"
+                  >
+                    {pick(copy.cta.downloadFallback)}
+                  </DockLink>
+                  <DockLink
+                    href="https://github.com/OronCanopy/OronBox"
+                    icon={Star}
+                    variant="connected"
+                  >
+                    {pick(copy.cta.github)}
+                  </DockLink>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Segment 2: Product Preview */}
+          <section
+            id="preview"
+            aria-label={pick(copy.preview.title)}
+            className="scroll-mt-20 rounded-[12px] bg-[var(--md-sys-color-surface-container-low)] p-2 sm:p-2.5"
+          >
+            <div className="flex flex-row gap-1.5 overflow-hidden rounded-[8px] sm:gap-2">
+              <div
+                className="min-w-0 overflow-hidden rounded-[8px] bg-[var(--md-sys-color-surface-container)]"
+                style={{ flexGrow: 2268 / 1434, flexBasis: 0 }}
+              >
+                <Image
+                  src={`/screenshots/${locale}_purple_light.png`}
+                  alt={pick(copy.preview.altMain)}
+                  width={2268}
+                  height={1434}
+                  className="block h-auto w-full dark:hidden"
+                  priority={false}
+                />
+                <Image
+                  src={`/screenshots/${locale}_purple_dark.png`}
+                  alt={pick(copy.preview.altMain)}
+                  width={2268}
+                  height={1434}
+                  className="hidden h-auto w-full dark:block"
+                  priority={false}
+                />
+              </div>
+              <div
+                className="min-w-0 overflow-hidden rounded-[8px] bg-[var(--md-sys-color-surface-container)]"
+                style={{ flexGrow: 1440 / 3200, flexBasis: 0 }}
+              >
+                <Image
+                  src={`/screenshots/mobile_${locale}_purple_light.png`}
+                  alt={pick(copy.preview.altPhone)}
+                  width={1440}
+                  height={3200}
+                  className="block h-auto w-full dark:hidden"
+                />
+                <Image
+                  src={`/screenshots/mobile_${locale}_purple_dark.png`}
+                  alt={pick(copy.preview.altPhone)}
+                  width={1440}
+                  height={3200}
+                  className="hidden h-auto w-full dark:block"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Segment 3: Integrated Platform Support Bar */}
+          <section
+            id="platforms"
+            className="flex scroll-mt-20 flex-col items-center justify-between gap-3 rounded-t-[12px] rounded-b-[32px] bg-[var(--md-sys-color-surface-container-low)] px-5 py-4 sm:px-6 lg:flex-row"
+          >
+            <div className="flex flex-col items-center gap-0.5 text-center sm:flex-row sm:gap-3 lg:text-left">
+              <h2 className="font-brand text-base font-semibold text-[var(--color-fd-foreground)]">
+                {pick(copy.platforms.title)}
+              </h2>
+              <p className="text-xs text-fd-muted-foreground sm:text-sm">
+                {pick(copy.platforms.hint)}
+              </p>
+            </div>
+            <div className="m3e-connected-group flex flex-wrap items-center justify-center gap-1">
+              {copy.platforms.items.map((item) => (
+                <span
+                  key={item}
+                  className="m3e-connected-item inline-flex min-h-9 items-center bg-[var(--md-sys-color-secondary-container)] px-3.5 text-xs font-semibold text-[var(--md-sys-color-on-secondary-container)] select-none hover:bg-[var(--md-sys-color-primary)] hover:text-[var(--md-sys-color-on-primary)] sm:text-sm"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Features — Direct M3E Segmented Grid */}
+        <section>
+          <div className="mb-3.5 flex flex-col gap-1 px-1">
+            <h2 className="font-brand text-[clamp(22px,3vw,28px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
+              {pick(copy.features.title)}
+            </h2>
+            <p className="text-xs text-fd-muted-foreground sm:text-sm">
+              {pick(copy.features.description)}
+            </p>
+          </div>
+          <div className="grid gap-1.5 overflow-hidden rounded-[28px] grid-cols-[repeat(auto-fit,minmax(min(100%,250px),1fr))]">
+            {copy.features.items.map((feature, i) => {
+              const [chipBg, chipFg] = accents[i % accents.length];
+              const shape = shapeVariants[i % shapeVariants.length];
+              return (
+                <div
+                  key={feature.title.zh}
+                  className="group m3e-segmented-card flex flex-col gap-3 bg-[var(--md-sys-color-surface-container-low)] p-5 hover:bg-[var(--md-sys-color-surface-container)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <M3EShapeBadge
+                      variant={shape}
+                      bg={chipBg}
+                      fg={chipFg}
+                      size="sm"
+                    >
+                      <feature.icon className="size-5" />
+                    </M3EShapeBadge>
+                    <h3 className="font-brand text-base font-semibold text-[var(--color-fd-foreground)] sm:text-lg">
+                      {pick(feature.title)}
+                    </h3>
+                  </div>
+                  <p className="whitespace-pre-line text-sm leading-[1.6] text-fd-muted-foreground">
                     {pick(feature.description)}
                   </p>
                 </div>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
 
-      {/* Documentation sections */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-20">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {sections.map((section, i) => {
-            const Icon = sectionIcons[section.slug] ?? BookOpen;
-            const [chipBg, chipFg] = accents[i % accents.length];
-            return (
-              <Reveal key={section.slug} delay={i * 80}>
+        {/* Documentation sections — Compact Horizontal M3E Segmented Tiles */}
+        <section>
+          <div className="mb-3.5 flex flex-col gap-1 px-1">
+            <h2 className="font-brand text-[clamp(22px,3vw,28px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
+              {pick(copy.docs.title)}
+            </h2>
+            <p className="text-xs text-fd-muted-foreground sm:text-sm">
+              {pick(copy.docs.description)}
+            </p>
+          </div>
+          <div className="grid gap-1.5 overflow-hidden rounded-[28px] grid-cols-[repeat(auto-fit,minmax(min(100%,270px),1fr))]">
+            {sections.map((section) => {
+              const visual = sectionVisuals[section.slug];
+              const Icon = visual.icon;
+              return (
                 <Link
+                  key={section.slug}
                   href={withLocale(lang, section.url)}
-                  className="group flex h-full flex-col rounded-[28px] bg-[var(--md-sys-color-surface-container-low)] p-6 no-underline transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                  className="group m3e-segmented-card flex items-center justify-between gap-4 bg-[var(--md-sys-color-surface-container-low)] p-5 no-underline hover:bg-[var(--md-sys-color-primary-container)]/55"
                 >
-                  <span
-                    className="mb-4 inline-flex size-12 items-center justify-center self-start rounded-2xl"
-                    style={{ backgroundColor: chipBg, color: chipFg }}
-                  >
-                    <Icon className="size-6" />
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <M3EShapeBadge
+                      variant={visual.shape}
+                      bg={visual.bg}
+                      fg={visual.fg}
+                    >
+                      <Icon className="size-5" />
+                    </M3EShapeBadge>
+                    <div className="min-w-0">
+                      <h3 className="font-brand text-base font-semibold text-[var(--color-fd-foreground)] sm:text-lg">
+                        {pick(section.title)}
+                      </h3>
+                      <p className="mt-0.5 text-sm leading-[1.5] text-fd-muted-foreground">
+                        {pick(section.description)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[18px] bg-[var(--md-sys-color-secondary-container)] text-[var(--md-sys-color-on-secondary-container)] transition-[width,border-radius,background-color,color] duration-250 ease-[var(--md-ease-emphasized)] group-hover:w-12 group-hover:rounded-[12px] group-hover:bg-[var(--md-sys-color-primary)] group-hover:text-[var(--md-sys-color-on-primary)]">
+                    <ArrowRight className="size-4" />
                   </span>
-                  <h2 className="mb-1 flex items-center gap-1 text-lg font-medium text-[var(--color-fd-foreground)]">
-                    {pick(section.title)}
-                    <ArrowRight className="size-4 opacity-0 transition-opacity duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:opacity-100" />
-                  </h2>
-                  <p className="text-sm leading-[1.65] text-fd-muted-foreground">
-                    {pick(section.description)}
-                  </p>
                 </Link>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
 
-      {/* Community */}
-      <section className="mx-auto w-full max-w-5xl px-6 pb-20">
-        <Reveal>
-          <h2 className="mb-2 text-center text-[clamp(28px,4vw,44px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
-            {pick(copy.community.title)}
-          </h2>
-        </Reveal>
-        <Reveal delay={80}>
-          <p className="mx-auto mb-8 max-w-2xl whitespace-pre-line text-center text-sm leading-[1.65] text-fd-muted-foreground">
-            {pick(copy.community.description)}
-          </p>
-        </Reveal>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {copy.community.links.map((link, i) => (
-            <Reveal key={link.title.zh} delay={160 + i * 80}>
-              <Link
-                href={link.href}
-                className="group flex h-full flex-col items-center gap-2 rounded-[28px] bg-[var(--md-sys-color-surface-container-low)] p-6 text-center no-underline transition-[background-color,color] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-              >
-                <link.icon className="size-6 text-[var(--md-sys-color-primary)]" />
-                <span className="font-medium text-[var(--color-fd-foreground)]">
-                  {pick(link.title)}
-                </span>
-                <span className="text-sm text-fd-muted-foreground">
-                  {pick(link.description)}
-                </span>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+        {/* Community — Direct 4-Column M3E Segmented Strip */}
+        <section>
+          <div className="mb-3.5 flex flex-col gap-1 px-1">
+            <h2 className="font-brand text-[clamp(22px,3vw,28px)] font-semibold tracking-[-0.02em] text-[var(--color-fd-foreground)]">
+              {pick(copy.community.title)}
+            </h2>
+            <p className="text-xs text-fd-muted-foreground sm:text-sm">
+              {pick(copy.community.description)}
+            </p>
+          </div>
+          <div className="grid gap-1.5 overflow-hidden rounded-[28px] grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))]">
+            {copy.community.links.map((link, i) => {
+              const [chipBg, chipFg] = accents[(i + 2) % accents.length];
+              const shape = shapeVariants[(i + 2) % shapeVariants.length];
+              return (
+                <Link
+                  key={link.title.zh}
+                  href={link.href}
+                  className="group m3e-segmented-card flex items-center gap-3.5 bg-[var(--md-sys-color-surface-container-low)] p-4 no-underline hover:bg-[var(--md-sys-color-surface-container-high)]"
+                >
+                  <M3EShapeBadge
+                    variant={shape}
+                    bg={chipBg}
+                    fg={chipFg}
+                    size="sm"
+                  >
+                    <link.icon className="size-5" />
+                  </M3EShapeBadge>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-brand truncate text-sm font-semibold text-[var(--color-fd-foreground)] sm:text-base">
+                      {pick(link.title)}
+                    </div>
+                    <div className="truncate text-xs text-fd-muted-foreground sm:text-sm">
+                      {pick(link.description)}
+                    </div>
+                  </div>
+                  <ArrowRight className="size-4 shrink-0 text-fd-muted-foreground transition-transform duration-300 ease-[var(--md-ease-spring)] group-hover:translate-x-0.5 group-hover:text-[var(--md-sys-color-primary)]" />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
-      <footer className="border-t border-fd-border px-6 py-8 text-center text-sm text-fd-muted-foreground">
-        © {new Date().getFullYear()} zxor-org · OronBox ·{' '}
-        <FileText className="inline size-3.5" />{' '}
-        <Link
-          href="https://github.com/zxor-org/OronBox-Docs"
-          className="no-underline hover:text-[var(--color-fd-foreground)]"
-        >
-          OronBox Docs
-        </Link>
-      </footer>
+        <M3EFooter lang={lang} />
+      </div>
     </HomeLayout>
   );
 }

@@ -17,15 +17,15 @@ export function Reveal({
   delay?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof IntersectionObserver === 'undefined',
+  );
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
-      return;
-    }
+    if (!el || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -35,7 +35,7 @@ export function Reveal({
           }
         }
       },
-      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0.01, rootMargin: '0px 0px 140px 0px' },
     );
     observer.observe(el);
     return () => observer.disconnect();

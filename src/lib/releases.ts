@@ -18,7 +18,6 @@ export type PackageKind =
   | 'arch'
   | 'targz'
   | 'apk'
-  | 'aab'
   | 'web';
 
 export interface DownloadOption {
@@ -47,7 +46,7 @@ export interface ReleaseInfo {
   checksumsUrl: string | null;
 }
 
-const REPO = 'zxor-org/OronBox';
+const REPO = 'OronCanopy/OronBox';
 const API = `https://api.github.com/repos/${REPO}/releases`;
 const RELEASES_PAGE = `https://github.com/${REPO}/releases`;
 
@@ -105,9 +104,6 @@ function parseAsset(name: string, url: string): DownloadOption | null {
   if ((m = name.match(/-android-(arm64-v8a|armeabi-v7a|x86_64)\.apk$/)))
     return { name, url, os: 'android', arch: normalizeArch(m[1]), kind: 'apk', format: '.apk' };
 
-  if (name.match(/-android-appbundle\.aab$/))
-    return { name, url, os: 'android', arch: 'any', kind: 'aab', format: '.aab' };
-
   if (name.match(/-web\.zip$/))
     return { name, url, os: 'web', arch: 'any', kind: 'web', format: '.zip' };
 
@@ -154,7 +150,6 @@ const FALLBACK: ReleaseInfo = toReleaseInfo({
   assets: [
     'oronbox-1.0.0-0.1.rc.1.aarch64.rpm',
     'oronbox-1.0.0-0.1.rc.1.x86_64.rpm',
-    'oronbox-1.0.0-rc.1-android-appbundle.aab',
     'oronbox-1.0.0-rc.1-android-arm64-v8a.apk',
     'oronbox-1.0.0-rc.1-android-armeabi-v7a.apk',
     'oronbox-1.0.0-rc.1-android-x86_64.apk',
@@ -218,7 +213,7 @@ export function recommendedFor(
     case 'macos':
       return byArch('dmg') ?? byArch('zip') ?? forOs[0];
     case 'linux':
-      return byArch('appimage') ?? byArch('flatpak') ?? byArch('deb') ?? forOs[0];
+      return byArch('flatpak') ?? byArch('appimage') ?? byArch('deb') ?? forOs[0];
     case 'android':
       return byArch('apk') ?? forOs[0];
     case 'web':
@@ -227,8 +222,8 @@ export function recommendedFor(
 }
 
 const linuxKindOrder: PackageKind[] = [
-  'appimage',
   'flatpak',
+  'appimage',
   'deb',
   'rpm',
   'arch',
